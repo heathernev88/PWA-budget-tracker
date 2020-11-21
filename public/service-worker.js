@@ -1,14 +1,16 @@
 const FILES_TO_CACHE = [
     "/",
     "/index.html",
-    "styles.css",
-    "index.js",
+    "/index.js",
+    "/db.js",
+    "/styles.css",
     "/manifest.webmanifest",
-    "/assets/images/icons/icon-192x192.png",
-    "/assets/images/icons/icon-512x512.png",
+    "/icons/icon-192x192.png",
+    "/icons/icon-512x512.png",
+    "https://cdn.jsdelivr.net/npm/chart.js@2.8.0"
 ];
 
-const CACHE_NAME = "static-cache-v2";
+const CACHE_NAME = "cache-v1";
 const DATA_CACHE_NAME = "data-cache-v1";
 
 self.addEventListener("install", function (evt) {
@@ -40,7 +42,7 @@ self.addEventListener("activate", function (evt) {
 });
 
 self.addEventListener("fetch", (event) => {
-    console.log(caches);
+    console.log(`Fetch  ${JSON.stringify(caches)}`);
     if (event.request.url.includes("/api/")) {
         event.respondWith(
             caches.open(DATA_CACHE_NAME)
@@ -53,11 +55,45 @@ self.addEventListener("fetch", (event) => {
                             return response;
                         })
                         .catch(err => {
-                            return cache.match(evt.request);
+                            return cache.match(event.request);
                         });
                 })
                 .catch(err => console.log(err))
         );
-    return;
+        return;
     };
-  });
+
+    // event.respondWith(
+    //     caches.open(CACHE_NAME).then(cache => {
+    //         return cache.match(event.request).then(response => {
+    //             return response || fetch(event.request);
+    //         });
+    //     })
+    // );
+    event.respondWith(
+        caches.open(CACHE_NAME).then(cache => {
+            return cache.match(event.request).then(response => {
+                if (response) {
+                    return response;
+                }
+
+                return fetch(event.request.clone()).then(response => {
+
+
+                    if (response.status < 400) {
+                        console.log('  Caching the response to', event.request.url);
+                        cache.put(event.request, response.clone());
+                    } else {
+                        console.log('  Not caching the response to', event.request.url);
+                    }
+
+                    // Return the original response object, which will be used to fulfill the resource request.
+                    return response;
+                });
+            }).catch(error => {
+                console.error('  Error in fetch handler:', error);
+                throw error;
+            });
+        })
+    );
+});
