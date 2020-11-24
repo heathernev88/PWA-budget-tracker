@@ -10,12 +10,12 @@ const FILES_TO_CACHE = [
     "https://cdn.jsdelivr.net/npm/chart.js@2.8.0"
 ];
 
-const CACHE_NAME = "cache-v1";
-const DATA_CACHE_NAME = "data-cache-v1";
+const PRECACHE = "precache-v1";
+const RUNTIME = "runtime-v1";
 
 self.addEventListener("install", function (evt) {
     evt.waitUntil(
-        caches.open(CACHE_NAME).then(cache => {
+        caches.open(PRECACHE).then(cache => {
             console.log("Your files were pre-cached successfully!");
             return cache.addAll(FILES_TO_CACHE);
         })
@@ -29,7 +29,7 @@ self.addEventListener("activate", function (evt) {
         caches.keys().then(keyList => {
             return Promise.all(
                 keyList.map(key => {
-                    if (key !== CACHE_NAME && key !== DATA_CACHE_NAME) {
+                    if (key !== PRECACHE && key !== RUNTIME) {
                         console.log("Removing old cache data", key);
                         return caches.delete(key);
                     }
@@ -45,7 +45,7 @@ self.addEventListener("fetch", (event) => {
     console.log(`Fetch  ${JSON.stringify(caches)}`);
     if (event.request.url.includes("/api/")) {
         event.respondWith(
-            caches.open(DATA_CACHE_NAME)
+            caches.open(RUNTIME)
                 .then(cache => {
                     return fetch(event.request)
                         .then(response => {
@@ -63,36 +63,10 @@ self.addEventListener("fetch", (event) => {
         return;
     };
 
-    // event.respondWith(
-    //     caches.open(CACHE_NAME).then(cache => {
-    //         return cache.match(event.request).then(response => {
-    //             return response || fetch(event.request);
-    //         });
-    //     })
-    // );
     event.respondWith(
-        caches.open(CACHE_NAME).then(cache => {
+        caches.open(PRECACHE).then(cache => {
             return cache.match(event.request).then(response => {
-                if (response) {
-                    return response;
-                }
-
-                return fetch(event.request.clone()).then(response => {
-
-
-                    if (response.status < 400) {
-                        console.log('  Caching the response to', event.request.url);
-                        cache.put(event.request, response.clone());
-                    } else {
-                        console.log('  Not caching the response to', event.request.url);
-                    }
-
-                    // Return the original response object, which will be used to fulfill the resource request.
-                    return response;
-                });
-            }).catch(error => {
-                console.error('  Error in fetch handler:', error);
-                throw error;
+                return response || fetch(event.request);
             });
         })
     );
