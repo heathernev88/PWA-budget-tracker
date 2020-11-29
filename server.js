@@ -15,7 +15,7 @@ app.use(express.json());
 
 app.use(express.static("public"));
 
-mongoose.connect("mongodb://localhost/pacific-retreat", {
+mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/pacific-retreat", {
   useNewUrlParser: true,
   useFindAndModify: false,
   useUnifiedTopology: true
