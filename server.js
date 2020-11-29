@@ -15,7 +15,7 @@ app.use(express.json());
 
 app.use(express.static("public"));
 
-mongoose.connect("mongodb://localhost/blooming-falls", {
+mongoose.connect("mongodb://localhost/pacific-retreat", {
   useNewUrlParser: true,
   useFindAndModify: false,
   useUnifiedTopology: true
